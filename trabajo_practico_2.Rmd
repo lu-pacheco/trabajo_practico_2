@@ -1,0 +1,72 @@
+---
+title: "trabajo_practico_2"
+author: "Lu Pacheco"
+---
+
+Para comenzar el trabajo, se levantan las librerías.
+```{r}
+library(tidyverse)
+library(sf)
+library(ggplot2)
+library(dplyr)
+```
+
+Se incorporan los datos correspondiente a la Ciudad Autónoma de Buenos Aires. 
+```{r}
+barrios_caba <- st_read("data/barrios_caba/barrios_caba.shp",
+                        stringsAsFactors = TRUE,
+                        options = "ENCODING=latin1")
+```
+
+Se analiza el dataset de los barrios de CABA
+
+```{r}
+summary(barrios_caba)
+```
+
+El trabajo analizará la distribución de cuarteles de bomberos en el territorio de la Ciudad Autónoma de Buenos Aires. Para ello, se revisa la base de datos de cuarteles y destacamentos de la Policia Federal Argentina en la Ciudad de Buenos Aires. 
+
+```{r}
+bomberos_caba <- read.csv("data/cuarteles-y-destacamentos-de-bomberos-de-policia-federal-argentina.csv",
+                        stringsAsFactors = TRUE)
+```
+
+Se ve que existen 30 cuarteles y destacamentos en CABA. 
+```{r}
+dim(bomberos_caba)
+```
+
+La base de datos provee información sobre la ubicación, el tipo de cuartel, entre otros datos. 
+
+```{r}
+summary(bomberos_caba)
+```
+
+Se ubican ambos sets de datos en un mapa.
+
+```{r}
+ggplot()+
+  geom_sf(data=barrios_caba, color="blue")+
+  geom_point(data=bomberos_caba, aes(x=long, y=lat))
+```
+
+Agrupamos los datos de acuerdo a la cantidad de estaciones por barrio.
+```{r}
+bomberos_barrio <-bomberos_caba %>%
+  group_by(barrio) %>%
+  summarise(cantidad=n())
+```
+
+Realizamos un gráfico para analizar cuáles son los 3 barrios con mayor cantidad de cuarteles de bomberos. 
+
+```{r}
+ggplot()+
+  geom_bar(data=bomberos_barrio %>%
+             top_n(3, cantidad), aes(x=reorder(barrio, -cantidad), weight=cantidad), fill="#52796f")+
+  labs(title="Cantidad de cuarteles de bomberos por barrio - Top 3",
+       x="Barrio",
+       y="Cantidad")+
+  theme_minimal()
+```
+
+Se observa que los barrios con la mayor cantidad de cuarteles de bomberos son Villa Lugano, La Boca y Retiro, que coincide con barrios en los que se observan déficits cualitativos en las viviendas y barrios más vulnerables. Una explicación posible es que la deficiente calidad de las viviendas hace que las posibilidades de incendios en estos barrios sea mayor. De todos modos, es necesario realizar un análisis más en profundidad y con datos adicionales para determinar el objetivo de esta distribución en la Ciudad Autónoma de Buenos Aires. 
